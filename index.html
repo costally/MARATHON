@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>배하늘 프로젝트: 15주 아키텍트 인포그래픽 (New)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Application Structure Plan: 
+         Updated to 15 Weeks based on the user's uploaded image.
+         Structure Logic:
+         - Mobile Optimization: Weekly Plan moved to top.
+         - Auto Date Logic: Automatically selects current week and maps dates to days.
+         - Today Highlight Logic: Highlight "Today" card.
+         - Fixed Detail View (UPDATED): Detail panel is always visible. Defaults to Today's workout.
+         
+         Data Source: User uploaded image (2025-11-17 start).
+    -->
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8fafc; /* Slate 50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            max-height: 400px;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        /* Smooth fade in for detail panel */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .selected-card {
+            border-color: #4f46e5 !important; /* Indigo 600 */
+            background-color: #eef2ff !important; /* Indigo 50 */
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Navbar / Header -->
+    <nav class="bg-indigo-600 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold tracking-tight">PROJECT: 15 WEEKS</h1>
+                <p class="text-indigo-200 text-xs uppercase tracking-widest">배하늘 전용 15주 파이널 플랜</p>
+            </div>
+            <div class="hidden md:flex space-x-4">
+                <div class="text-center">
+                    <span class="block text-xs text-indigo-300">START DATE</span>
+                    <span class="font-bold text-lg">2025.11.17</span>
+                </div>
+                <div class="border-l border-indigo-500 mx-2"></div>
+                <div class="text-center">
+                    <span class="block text-xs text-indigo-300">TOTAL WEEKS</span>
+                    <span class="font-bold text-lg">15 Weeks</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+        <!-- WEEKLY PLANNER -->
+        <section>
+            <div class="flex flex-col md:flex-row justify-between items-end mb-4 border-b pb-4 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 flex items-center">
+                        📅 주간 실행 계획
+                        <span class="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">Weekly Blueprint</span>
+                    </h2>
+                    <p class="text-slate-600 mt-1 text-sm">
+                        요일 카드를 <strong>클릭</strong>하면 하단 훈련 가이드가 갱신됩니다. (기본값: 오늘)
+                    </p>
+                </div>
+                <div class="w-full md:w-64">
+                    <label for="weekSelector" class="block text-sm font-medium text-slate-700 mb-1">주차 선택 (Select Week)</label>
+                    <select id="weekSelector" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm bg-white border">
+                        <!-- Options via JS -->
+                    </select>
+                </div>
+            </div>
+
+            <div id="phaseBanner" class="bg-indigo-100 text-indigo-800 px-4 py-3 rounded-lg mb-6 font-bold text-center border border-indigo-200 shadow-sm">
+                <!-- Content via JS -->
+            </div>
+
+            <!-- Daily Grid -->
+            <div id="dailyGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- Cards via JS -->
+            </div>
+
+            <!-- DETAIL PANEL (Always Visible) -->
+            <div id="workoutDetailPanel" class="bg-white border border-slate-200 rounded-xl p-6 shadow-md animate-fade-in relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-2 h-full bg-indigo-500" id="detailAccent"></div>
+                <div class="ml-4">
+                    <h3 class="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+                        <span id="detailIcon" class="text-2xl">🏃</span>
+                        <span id="detailTitle">훈련 제목</span>
+                    </h3>
+                    <p class="text-sm text-slate-500 mb-4 font-mono bg-slate-100 inline-block px-2 py-1 rounded" id="detailSpecs">거리 / 페이스</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- WHY -->
+                        <div class="bg-slate-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-indigo-700 mb-2 text-sm uppercase tracking-wide">🎯 왜 해야 하는가? (WHY)</h4>
+                            <p id="detailWhy" class="text-sm text-slate-700 leading-relaxed">...</p>
+                        </div>
+                        
+                        <!-- HOW -->
+                        <div class="bg-slate-50 p-4 rounded-lg">
+                            <h4 class="font-bold text-indigo-700 mb-2 text-sm uppercase tracking-wide">⚙️ 어떻게 하는가? (HOW)</h4>
+                            <p id="detailHow" class="text-sm text-slate-700 leading-relaxed">...</p>
+                        </div>
+
+                        <!-- CAUTION -->
+                        <div class="bg-rose-50 p-4 rounded-lg border border-rose-100">
+                            <h4 class="font-bold text-rose-700 mb-2 text-sm uppercase tracking-wide">⚠️ 주의사항 (CAUTION)</h4>
+                            <p id="detailCaution" class="text-sm text-slate-700 leading-relaxed">...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INTRO -->
+        <section>
+            <div class="bg-white rounded-xl card-shadow p-6 border-l-8 border-indigo-500">
+                <h2 class="text-lg font-bold text-slate-900 mb-2">훈련 구조 변경 알림 (Structure Update)</h2>
+                <p class="text-slate-600 leading-relaxed text-sm md:text-base">
+                    제공된 <strong>15주 데이터 테이블</strong>을 기반으로 프로그램이 재설계되었습니다.<br>
+                    사용자 요청에 따라 <strong>수요일 크루런, 금요일 업힐, 일요일 LSD</strong>가 고정 배치되었습니다.
+                </p>
+            </div>
+        </section>
+
+        <!-- SAFETY PROTOCOL -->
+        <section>
+            <div class="bg-white rounded-xl card-shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-slate-900">🛡️ Gemini 통증 신호등 (Safety Protocol)</h2>
+                    <span class="text-xs text-slate-500">매일 체크 필수</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-rose-50 p-4 rounded-lg border-l-4 border-rose-500">
+                        <span class="block font-bold text-rose-700 mb-1">🔴 RED (즉시 중단)</span>
+                        <span class="text-xs text-slate-600">아침 첫발 찌릿함, 국소적 통증. 48시간 휴식.</span>
+                    </div>
+                    <div class="bg-amber-50 p-4 rounded-lg border-l-4 border-amber-500">
+                        <span class="block font-bold text-amber-700 mb-1">🟡 YELLOW (강도 조절)</span>
+                        <span class="text-xs text-slate-600">뒤꿈치 뻣뻣함, 지속적 피로. LSD 거리 단축.</span>
+                    </div>
+                    <div class="bg-emerald-50 p-4 rounded-lg border-l-4 border-emerald-500">
+                        <span class="block font-bold text-emerald-700 mb-1">🟢 GREEN (정상 진행)</span>
+                        <span class="text-xs text-slate-600">통증 없음, 개운함. 계획대로 진행.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MACRO ANALYSIS: CHARTS -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 bg-white rounded-xl card-shadow p-6">
+                <div class="mb-4 border-b pb-2">
+                    <h3 class="text-lg font-bold text-indigo-900">📊 15주 훈련 부하 (LSD 거리 vs 업힐 세트)</h3>
+                    <p class="text-sm text-slate-500">제공된 표의 LSD 거리와 업힐 세트 수 변화 그래프입니다.</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="comboChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl card-shadow p-6">
+                <div class="mb-4 border-b pb-2">
+                    <h3 class="text-lg font-bold text-indigo-900">🗓️ 훈련 구성 (Fixed Schedule)</h3>
+                    <p class="text-sm text-slate-500">사용자 맞춤형 고정 스케줄</p>
+                </div>
+                <ul class="space-y-4 text-sm">
+                    <li class="flex items-center p-3 bg-slate-50 rounded-lg">
+                        <span class="bg-slate-200 text-slate-600 font-bold px-2 py-1 rounded mr-3">MON</span>
+                        <div>
+                            <strong class="block text-slate-800">리커버리 런 (Recovery)</strong>
+                            <span class="text-xs text-slate-500">일요일 LSD 피로 회복 (고정 5km)</span>
+                        </div>
+                    </li>
+                    <li class="flex items-center p-3 bg-cyan-50 rounded-lg">
+                        <span class="bg-cyan-200 text-cyan-800 font-bold px-2 py-1 rounded mr-3">WED</span>
+                        <div>
+                            <strong class="block text-cyan-900">크루런 (Crew Run)</strong>
+                            <span class="text-xs text-cyan-700">즐거운 러닝 & 소셜 페이스</span>
+                        </div>
+                    </li>
+                    <li class="flex items-center p-3 bg-indigo-50 rounded-lg">
+                        <span class="bg-indigo-200 text-indigo-800 font-bold px-2 py-1 rounded mr-3">FRI</span>
+                        <div>
+                            <strong class="block text-indigo-900">업힐 인터벌 (Uphill)</strong>
+                            <span class="text-xs text-indigo-700">심폐 지구력 강화 (표 기반)</span>
+                        </div>
+                    </li>
+                    <li class="flex items-center p-3 bg-rose-50 rounded-lg">
+                        <span class="bg-rose-200 text-rose-800 font-bold px-2 py-1 rounded mr-3">SUN</span>
+                        <div>
+                            <strong class="block text-rose-900">LSD (Long Slow Distance)</strong>
+                            <span class="text-xs text-rose-700">지구력 핵심 (거리 점진 증가)</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="font-mono text-sm">DESIGNED BY GPT & GEMINI FOR BAE HANEUL</p>
+            <p class="text-xs mt-2 opacity-60">Based on Uploaded 15-Week Table</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- WORKOUT DETAILS LIBRARY (Static Data for Modal/Panel) ---
+        const workoutLibrary = {
+            "리커버리": {
+                why: "일요일 LSD 훈련으로 쌓인 피로물질(젖산)을 배출하고 근육의 경직을 풀기 위함입니다. '적극적 휴식(Active Recovery)'이 완전 휴식보다 회복 속도를 20~30% 높여줍니다.",
+                how: "대화가 아주 편안하게 가능한 속도로 뜁니다. 폼이 무너지지 않는 선에서 가장 느리게 뛰세요. 심박수는 Zone 1-2를 유지합니다.",
+                caution: "절대 속도를 높이지 마세요. '운동이 안 되는 것 같은데?'라는 느낌이 들어야 정상입니다. 기분이 좋다고 질주하면 부상으로 이어집니다."
+            },
+            "휴식/보강": {
+                why: "근육과 신경계가 성장하는 시간은 운동할 때가 아니라 쉴 때입니다. 보강 운동은 러닝으로 약해질 수 있는 코어와 둔근을 강화해 부상을 방지합니다.",
+                how: "완전 휴식을 취하거나, 플랭크/브릿지 같은 정적인 코어 운동을 20분 정도 수행합니다. 종아리 폼롤러 마사지를 강력 추천합니다.",
+                caution: "하체 근력 운동(스쿼트, 런지)을 과하게 하면 다음 날 훈련에 지장을 줍니다. 코어 위주로 진행하세요."
+            },
+            "크루런": {
+                why: "러닝의 즐거움을 유지하고 '사회적 소속감'을 느끼는 시간입니다. 혼자만의 훈련 강박에서 벗어나 리프레시하는 것이 목표입니다.",
+                how: "크루들과 즐겁게 대화하며 뜁니다. 본인의 훈련 페이스보다 약간 느리거나 편안한 그룹에 합류하세요.",
+                caution: "분위기에 휩쓸려 '오버페이스' 하지 않는 것이 핵심입니다. 기분파가 되어 질주하면 목요일 템포런을 망칩니다."
+            },
+            "템포런": {
+                why: "젖산 역치(LT)를 높여, 숨이 찬 상태에서도 속도를 유지하는 능력을 기릅니다. 1:50 목표 달성을 위해 가장 중요한 '스피드 지구력' 훈련입니다.",
+                how: "초반 1km는 웜업으로 천천히, 이후 목표 페이스까지 부드럽게 올립니다. 설정된 페이스(예: 5:30)를 칼같이 유지하는 '메트로놈'이 되세요.",
+                caution: "초반에 너무 빨리 달리지 마세요. 후반에 퍼지면 훈련 효과가 반감됩니다. 일정한 리듬감을 유지하는 데 집중하세요."
+            },
+            "업힐": {
+                why: "심폐지구력(VO2max)과 하체 근력을 동시에 강화합니다. 평지 인터벌보다 관절 충격은 적으면서 심장 부하능력은 극대화할 수 있는 최고의 효율 훈련입니다.",
+                how: "오르막에서는 '보폭을 좁게, 엉덩이로 미는 느낌'으로 빠르게 올라갑니다. 내리막은 **반드시** 걸어서 내려오며 회복합니다.",
+                caution: "내리막을 뛰어 내려오면 무릎과 아킬레스건에 체중의 3~5배 충격이 가해집니다. 절대 뛰지 마세요. 걷는 것이 훈련입니다."
+            },
+            "휴식": {
+                why: "일요일 장거리 훈련(LSD)을 위해 에너지를 비축하는 날입니다. '카보 로딩'의 미니 버전으로, 탄수화물을 충분히 섭취해 글리코겐을 채웁니다.",
+                how: "가벼운 산책 정도로 몸을 풀거나 완전히 쉽니다. 수면 시간을 1시간 더 확보하세요.",
+                caution: "음주는 피하세요. 탈수를 유발하여 다음 날 LSD 수행 능력을 떨어뜨립니다."
+            },
+            "LSD": {
+                why: "지방을 에너지원으로 쓰는 능력을 키우고, 장시간 달릴 수 있는 '러닝 이코노미(효율성)'를 만듭니다. 하프 마라톤 완주의 기초 체력입니다.",
+                how: "옆 사람과 대화할 수 있는 편안한 페이스(6:30~)를 유지합니다. 속도보다는 '시간을 채우는 것'에 집중하세요.",
+                caution: "중간에 멈추지 않고 천천히라도 계속 뛰는 것이 중요합니다. 10km 이상 뛸 때는 반드시 물이나 에너지젤을 챙기세요."
+            }
+        };
+
+        // --- DATA SOURCE (Extracted from Image) ---
+        const trainingData = [
+            { week: 1, date: "2025-11-17", phase: "적응기 (Base)", note: "거리 적응 시작", 
+              lsdDist: 14.00, lsdPace: "6:30", 
+              tempoDist: 4.00, tempoPace: "5:30", 
+              uphillSets: 8, uphillPace: "4:40" },
+            
+            { week: 2, date: "2025-11-24", phase: "적응기 (Base)", note: "LSD 거리 증가", 
+              lsdDist: 15.40, lsdPace: "6:30", 
+              tempoDist: 4.28, tempoPace: "5:25", 
+              uphillSets: 9, uphillPace: "4:38" },
+            
+            { week: 3, date: "2025-12-01", phase: "적응기 (Base)", note: "기초 체력 확보", 
+              lsdDist: 16.94, lsdPace: "6:30", 
+              tempoDist: 4.58, tempoPace: "5:20", 
+              uphillSets: 10, uphillPace: "4:36" },
+            
+            { week: 4, date: "2025-12-08", phase: "회복주 (Recovery)", note: "강도 조절", 
+              lsdDist: 11.86, lsdPace: "6:30", 
+              tempoDist: 3.21, tempoPace: "5:30", 
+              uphillSets: 7, uphillPace: "4:34" },
+            
+            { week: 5, date: "2025-12-15", phase: "강화기 (Build)", note: "다시 거리 증가", 
+              lsdDist: 16.94, lsdPace: "6:30", 
+              tempoDist: 4.58, tempoPace: "5:20", 
+              uphillSets: 10, uphillPace: "4:36" },
+            
+            { week: 6, date: "2025-12-22", phase: "강화기 (Build)", note: "업힐 세트 증가", 
+              lsdDist: 18.63, lsdPace: "6:30", 
+              tempoDist: 4.90, tempoPace: "5:15", 
+              uphillSets: 11, uphillPace: "4:34" },
+            
+            { week: 7, date: "2025-12-29", phase: "강화기 (Build)", note: "20k 돌파", 
+              lsdDist: 20.50, lsdPace: "6:30", 
+              tempoDist: 5.24, tempoPace: "5:10", 
+              uphillSets: 12, uphillPace: "4:32" },
+            
+            { week: 8, date: "2026-01-05", phase: "회복주 (Recovery)", note: "중간 휴식", 
+              lsdDist: 14.35, lsdPace: "6:30", 
+              tempoDist: 4.19, tempoPace: "5:20", 
+              uphillSets: 7, uphillPace: "4:30" },
+            
+            { week: 9, date: "2026-01-12", phase: "강화기 (Peak Prep)", note: "고강도 지속", 
+              lsdDist: 20.50, lsdPace: "6:30", 
+              tempoDist: 5.24, tempoPace: "5:10", 
+              uphillSets: 12, uphillPace: "4:32" },
+            
+            { week: 10, date: "2026-01-19", phase: "강화기 (Peak)", note: "최대 부하 진입", 
+              lsdDist: 22.55, lsdPace: "6:30", 
+              tempoDist: 5.61, tempoPace: "5:05", 
+              uphillSets: 13, uphillPace: "4:30" },
+            
+            { week: 11, date: "2026-01-26", phase: "강화기 (Max Peak)", note: "최장 거리 LSD", 
+              lsdDist: 24.80, lsdPace: "6:30", 
+              tempoDist: 6.00, tempoPace: "5:00", 
+              uphillSets: 14, uphillPace: "4:28" },
+            
+            { week: 12, date: "2026-02-02", phase: "조절기 (Taper)", note: "훈련량 감소 시작", 
+              lsdDist: 17.36, lsdPace: "6:30", 
+              tempoDist: 4.80, tempoPace: "5:10", 
+              uphillSets: 9, uphillPace: "4:26" },
+
+            { week: 13, date: "2026-02-09", phase: "실전기 (Race Prep)", note: "페이스 감각 유지", 
+              lsdDist: 19.84, lsdPace: "6:30", 
+              tempoDist: 4.80, tempoPace: "5:00", 
+              uphillSets: 11, uphillPace: "4:28" },
+
+            { week: 14, date: "2026-02-16", phase: "조절기 (Taper)", note: "급격한 양 감소", 
+              lsdDist: 14.88, lsdPace: "6:30", 
+              tempoDist: 3.60, tempoPace: "5:10", 
+              uphillSets: 9, uphillPace: "4:26" },
+
+            { week: 15, date: "2026-02-23", phase: "대회주 (Race Week)", note: "컨디션 최적화", 
+              lsdDist: 7.44, lsdPace: "6:30", 
+              tempoDist: 1.80, tempoPace: "5:00", 
+              uphillSets: 4, uphillPace: "4:28" }
+        ];
+
+        // --- WEEKLY SCHEDULE LOGIC ---
+        const weekSelector = document.getElementById('weekSelector');
+        const phaseBanner = document.getElementById('phaseBanner');
+        const dailyGrid = document.getElementById('dailyGrid');
+        const detailPanel = document.getElementById('workoutDetailPanel');
+
+        // Populate Dropdown
+        trainingData.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.week;
+            opt.text = `Week ${d.week} (${d.date}): ${d.phase}`;
+            weekSelector.appendChild(opt);
+        });
+
+        // Helper to get dates for Mon-Sun based on Week Start Date
+        function getWeekDates(startDateStr) {
+            const startDate = new Date(startDateStr);
+            const dates = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                const month = d.getMonth() + 1;
+                const day = d.getDate();
+                dates.push(`${month}.${day}`);
+            }
+            return dates;
+        }
+
+        // --- INTERACTION LOGIC (Show Detail) ---
+        function showDetail(cardEl, title, work, spec, typeKey) {
+            // 1. Remove highlight from all cards
+            document.querySelectorAll('#dailyGrid > div').forEach(el => {
+                el.classList.remove('selected-card', 'ring-4', 'ring-indigo-500');
+                // Reset dimmed state if it was dimmed
+                el.classList.remove('opacity-40', 'grayscale-[0.8]'); 
+                el.classList.add('opacity-100', 'grayscale-0');
+            });
+
+            // 2. Highlight clicked card
+            // If cardEl is provided (not null/undefined), highlight it
+            if (cardEl) {
+                cardEl.classList.remove('opacity-40', 'grayscale-[0.8]');
+                cardEl.classList.add('selected-card');
+            }
+
+            // 3. Get Detail Data
+            // Use the base type name to look up the library (e.g. "업힐 인터벌" -> "업힐" key)
+            let key = typeKey;
+            if (typeKey.includes('리커버리')) key = '리커버리';
+            if (typeKey.includes('휴식') || typeKey.includes('보강')) key = '휴식/보강';
+            if (typeKey.includes('크루런')) key = '크루런';
+            if (typeKey.includes('템포')) key = '템포런';
+            if (typeKey.includes('업힐')) key = '업힐';
+            if (typeKey.includes('LSD')) key = 'LSD';
+            // Saturday rest check
+            if (typeKey === '휴식' && title.includes('토')) key = '휴식';
+
+            const info = workoutLibrary[key] || { why: "세부 정보 없음", how: "-", caution: "-" };
+
+            // 4. Update Panel UI
+            document.getElementById('detailTitle').textContent = work;
+            // Handle icon logic carefully
+            const iconEl = cardEl ? cardEl.querySelector('.text-xs') : null;
+            const iconText = iconEl ? iconEl.textContent.split(' ')[0] : "🏃";
+            document.getElementById('detailIcon').textContent = iconText;
+            document.getElementById('detailSpecs').textContent = spec;
+            
+            document.getElementById('detailWhy').textContent = info.why;
+            document.getElementById('detailHow').textContent = info.how;
+            document.getElementById('detailCaution').textContent = info.caution;
+
+            // Update Accent Color based on type
+            const accentDiv = document.getElementById('detailAccent');
+            if(key === 'LSD') accentDiv.className = "absolute top-0 left-0 w-2 h-full bg-rose-500";
+            else if(key === '템포런') accentDiv.className = "absolute top-0 left-0 w-2 h-full bg-cyan-500";
+            else if(key === '업힐') accentDiv.className = "absolute top-0 left-0 w-2 h-full bg-indigo-500";
+            else accentDiv.className = "absolute top-0 left-0 w-2 h-full bg-slate-400";
+
+            // 5. Panel is always visible now, no need to toggle hidden class
+        }
+
+
+        // Render Function
+        function renderWeek(weekNum) {
+            const data = trainingData.find(d => d.week == weekNum);
+            const dates = getWeekDates(data.date);
+            
+            // Determine Today
+            const todayObj = new Date();
+            const todayStr = `${todayObj.getMonth() + 1}.${todayObj.getDate()}`;
+            const isTodayInThisWeek = dates.includes(todayStr);
+
+            // Update Banner
+            phaseBanner.textContent = `Week ${data.week} [${data.phase}] - ${data.note}`;
+            if (data.phase.includes('회복') || data.phase.includes('조절')) {
+                phaseBanner.className = "bg-slate-100 text-slate-800 px-4 py-3 rounded-lg mb-6 font-bold text-center border border-slate-200 shadow-sm";
+            } else if (data.week === 15) {
+                phaseBanner.className = "bg-rose-100 text-rose-800 px-4 py-3 rounded-lg mb-6 font-bold text-center border border-rose-200 shadow-sm";
+            } else {
+                phaseBanner.className = "bg-indigo-100 text-indigo-800 px-4 py-3 rounded-lg mb-6 font-bold text-center border border-indigo-200 shadow-sm";
+            }
+
+            // Clear Grid & Hide Panel
+            dailyGrid.innerHTML = '';
+            // Detail panel is always visible, so don't hide it
+
+            const schedule = [
+                { day: `월 (${dates[0]})`, type: "리커버리", icon: "🛌", 
+                  work: `회복 조깅 5km`, detail: `Pace: 7:00`, safety: "일요일 LSD 피로 회복" },
+                { day: `화 (${dates[1]})`, type: "휴식/보강", icon: "🧘", 
+                  work: "완전 휴식", detail: "스트레칭 20분", safety: "수요일 크루런 대비" },
+                { day: `수 (${dates[2]})`, type: "크루런", icon: "🏃‍♂️", 
+                  work: "크루 러닝", detail: "즐거운 페이스", safety: "오버페이스 주의" },
+                { day: `목 (${dates[3]})`, type: "템포런", icon: "⚡", 
+                  work: `지속주 ${data.tempoDist}km`, detail: `Pace: ${data.tempoPace}`, safety: "일정한 리듬감 유지" },
+                { day: `금 (${dates[4]})`, type: "업힐", icon: "⛰️", 
+                  work: `업힐 ${data.uphillSets}세트`, detail: `Pace: ${data.uphillPace}`, safety: "내리막 절대 걷기" },
+                { day: `토 (${dates[5]})`, type: "휴식", icon: "💤", 
+                  work: "휴식", detail: "컨디션 조절", safety: "탄수화물 섭취" },
+                { day: `일 (${dates[6]})`, type: "LSD", icon: "🛣️", 
+                  work: `장거리주 ${data.lsdDist}km`, detail: `Pace: ${data.lsdPace}`, safety: "중간 급수 필수" }
+            ];
+
+            let defaultCardToClick = null;
+
+            // Generate Cards
+            schedule.forEach((item, index) => {
+                let cardClass = "bg-white border-slate-200 rounded-xl p-4 shadow-sm flex flex-col h-full transition-all duration-200 border relative cursor-pointer active:scale-95";
+                const isToday = (dates[index] === todayStr);
+
+                // Highlight / Dim Logic
+                if (isTodayInThisWeek) {
+                    if (isToday) {
+                        cardClass += " ring-4 ring-indigo-500 ring-offset-2 scale-[1.02] shadow-xl z-10 bg-white opacity-100";
+                        item.typeTag = "TODAY 🔥";
+                    } else {
+                        cardClass += " opacity-60 grayscale-[0.5] hover:opacity-100 hover:grayscale-0 hover:scale-100";
+                        item.typeTag = item.type;
+                    }
+                } else {
+                    cardClass += " hover:shadow-md hover:-translate-y-1";
+                    item.typeTag = item.type;
+                }
+
+                // Create Element
+                const cardDiv = document.createElement('div');
+                cardDiv.className = cardClass;
+                cardDiv.innerHTML = `
+                    ${isToday ? '<div class="absolute -top-3 -right-3 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full animate-bounce shadow-lg">TODAY</div>' : ''}
+                    <div class="flex justify-between items-start mb-2 pointer-events-none">
+                        <span class="font-bold text-slate-900">${item.day}</span>
+                        <span class="text-xs font-bold px-2 py-1 rounded bg-slate-50 border border-slate-200 whitespace-nowrap">${item.icon} ${item.typeTag}</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-1 pointer-events-none">${item.work}</h4>
+                    <div class="text-xs text-slate-500 mb-3 pointer-events-none">
+                        <span class="font-mono bg-slate-50 px-1 rounded inline-block">${item.detail}</span>
+                    </div>
+                    <div class="mt-auto pt-3 border-t border-dashed border-slate-200 pointer-events-none">
+                        <p class="text-xs font-bold text-emerald-600 flex items-start">
+                            <span class="mr-1">🛡️</span> 
+                            <span>${item.safety}</span>
+                        </p>
+                    </div>
+                `;
+
+                // Add Click Event
+                cardDiv.onclick = function() {
+                    showDetail(this, item.day, item.work, item.detail, item.type);
+                };
+
+                dailyGrid.appendChild(cardDiv);
+
+                // Determine which card to select by default
+                if (isTodayInThisWeek) {
+                    if (isToday) defaultCardToClick = cardDiv;
+                } else {
+                    // Default to Monday if today is not in this week
+                    if (index === 0) defaultCardToClick = cardDiv;
+                }
+            });
+            
+            // Trigger default selection after cards are rendered
+            if (defaultCardToClick) {
+                 defaultCardToClick.click();
+            }
+        }
+
+        // Auto-Select Current Week Logic
+        function initAutoSelect() {
+            const today = new Date();
+            const startDate = new Date("2025-11-17");
+            const diffTime = today - startDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            let currentWeek = 1;
+            if (diffDays >= 0) currentWeek = Math.floor(diffDays / 7) + 1;
+            else currentWeek = 1; 
+            if (currentWeek > 15) currentWeek = 15;
+            
+            weekSelector.value = currentWeek;
+            renderWeek(currentWeek);
+        }
+
+        weekSelector.addEventListener('change', (e) => renderWeek(e.target.value));
+        initAutoSelect();
+
+        // --- CHART: COMBO ---
+        try {
+            const weekLabels = trainingData.map(d => `W${d.week}`);
+            const ctxCombo = document.getElementById('comboChart').getContext('2d');
+            new Chart(ctxCombo, {
+                type: 'bar',
+                data: {
+                    labels: weekLabels,
+                    datasets: [
+                        {
+                            type: 'line',
+                            label: '업힐 세트 수 (Sets)',
+                            data: trainingData.map(d => d.uphillSets),
+                            borderColor: '#06b6d4',
+                            backgroundColor: '#06b6d4',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            type: 'bar',
+                            label: 'LSD 거리 (km)',
+                            data: trainingData.map(d => d.lsdDist),
+                            backgroundColor: trainingData.map(d => {
+                                if (d.week === 15) return '#f43f5e';
+                                if (d.phase.includes('회복') || d.phase.includes('조절')) return '#94a3b8';
+                                return '#4f46e5';
+                            }),
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Distance (km)' }, grid: { display: false } },
+                        y1: { beginAtZero: true, position: 'right', title: { display: true, text: 'Sets' }, grid: { color: '#f1f5f9' } }
+                    }
+                }
+            });
+        } catch (e) { console.error("Chart loading failed", e); }
+    </script>
+</body>
+</html>
