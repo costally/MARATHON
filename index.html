@@ -1,13 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="ko" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>배하늘 삼일절 하프마라톤 도전 : 훈련계획표</title>
+    <title>배하늘 하프마라톤 : 적응형 스케줄러 V5.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -34,39 +32,76 @@
         .checkbox-wrapper input:checked + div svg {
             display: block;
         }
+
+        /* Range Slider */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+        .dark input[type=range]::-webkit-slider-runnable-track {
+            background: #475569;
+        }
         
         /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        
-        /* Dark Mode Transitions */
-        .dark body { background-color: #0f172a; color: #e2e8f0; }
-        .dark .bg-white { background-color: #1e293b; border-color: #334155; }
-        .dark .text-slate-900 { color: #f1f5f9; }
-        .dark .text-slate-800 { color: #e2e8f0; }
-        .dark .text-slate-600, .dark .text-slate-500 { color: #94a3b8; }
-        .dark .bg-slate-50 { background-color: #334155; border-color: #475569; }
-        .dark .border-slate-200 { border-color: #334155; }
-        .dark select { background-color: #334155; color: white; border-color: #475569; }
-        
-        /* Loader */
-        .loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #6366f1; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Markdown Styles */
-        .ai-content strong { color: #6366f1; font-weight: 700; }
-        .dark .ai-content strong { color: #818cf8; }
-        .ai-content ul { list-style-type: disc; padding-left: 1.2rem; margin-top: 0.5rem; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 300px;
+            max-width: 90vw;
+            margin-left: -150px;
+            background-color: rgba(30, 41, 59, 0.95);
+            color: #fff;
+            text-align: left;
+            border-radius: 12px;
+            padding: 20px;
+            position: fixed;
+            z-index: 2000;
+            left: 50%;
+            bottom: 30px;
+            font-size: 14px;
+            line-height: 1.6;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: opacity 0.4s, bottom 0.4s;
+            white-space: pre-wrap;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+        .toast-title { font-weight: bold; font-size: 16px; margin-bottom: 8px; display: block; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; }
+        .toast-highlight { color: #818cf8; font-weight: bold; }
+        .toast-warn { color: #fbbf24; font-weight: bold; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white pb-20">
 
+    <!-- NAV -->
     <nav class="bg-white dark:bg-slate-900 shadow-lg sticky top-0 z-50 border-b dark:border-slate-800 transition-colors">
         <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex flex-col">
                     <h1 class="text-xl md:text-2xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                        <span class="text-indigo-600 dark:text-indigo-400">15 WEEKS</span> ARCHITECT
+                        <span class="text-indigo-600 dark:text-indigo-400">ADAPTIVE</span> RUNNER V5.4
                     </h1>
                     <div id="dDayCounter" class="text-xs font-bold text-rose-500 bg-rose-50 dark:bg-rose-900/30 dark:text-rose-300 px-2 py-0.5 rounded w-fit mt-1">
                         D-DAY Loading...
@@ -74,8 +109,8 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <button onclick="downloadICS()" class="hidden md:flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition">
-                        📅 <span>캘린더 담기</span>
+                    <button onclick="resetPlan()" class="hidden md:flex text-xs text-slate-400 hover:text-red-500 underline mr-2">
+                        ⚠️ 초기화
                     </button>
                     <button id="themeToggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
                         🌙
@@ -87,28 +122,31 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
 
+        <!-- WEEK SELECTOR -->
         <section>
             <div class="flex flex-col md:flex-row justify-between items-end mb-6 gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        📅 주간 실행 계획
+                        📅 주간 훈련 스케줄
                     </h2>
                     <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        카드를 클릭하여 상세 가이드를 확인하세요. 완료 후 체크박스(✅)를 눌러 저장하세요.
+                        카드 우측 상단의 <span class="inline-flex items-center justify-center w-5 h-5 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded text-xs font-bold">↺</span> 버튼을 눌러 스케줄을 변경하거나 복구할 수 있습니다.
                     </p>
                 </div>
                 <div class="w-full md:w-64">
                     <select id="weekSelector" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:bg-slate-800 transition">
-                        </select>
+                        <!-- Options populated by JS -->
+                    </select>
                 </div>
             </div>
 
-            <div id="phaseBanner" class="w-full px-4 py-3 rounded-lg mb-6 text-center font-bold text-sm shadow-sm transition-all">
-                </div>
+            <!-- STATUS BANNER -->
+            <div id="phaseBanner" class="w-full px-4 py-3 rounded-lg mb-6 text-center font-bold text-sm shadow-sm transition-all"></div>
 
-            <div id="dailyGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                </div>
+            <!-- DAILY GRID -->
+            <div id="dailyGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"></div>
 
+            <!-- WORKOUT DETAIL PANEL -->
             <div id="workoutDetailPanel" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-lg relative overflow-hidden transition-all">
                 <div class="absolute top-0 left-0 w-1.5 h-full bg-indigo-500 transition-colors" id="detailAccent"></div>
                 <div class="ml-2">
@@ -116,233 +154,159 @@
                         <div>
                             <h3 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-2">
                                 <span id="detailIcon">🏃</span>
-                                <span id="detailTitle">훈련 제목</span>
+                                <span id="detailTitle">훈련 가이드</span>
                             </h3>
                             <span id="detailSpecs" class="inline-block px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded font-mono text-sm">
-                                Specs Loading...
+                                카드를 클릭하여 상세 내용을 확인하세요
                             </span>
                         </div>
-                        <button id="btnAskAI" class="group relative inline-flex items-center justify-center px-4 py-2 text-sm font-bold text-white transition-all duration-200 bg-indigo-600 font-pj rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 hover:bg-indigo-700 shadow-md">
-                            <span class="mr-2">✨ AI 코치 팁</span>
-                            <div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-                        </button>
                     </div>
-
-                    <div id="aiCoachArea" class="hidden mb-8 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-700 dark:to-slate-800 border border-indigo-100 dark:border-slate-600 rounded-xl p-5 relative shadow-inner">
-                        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-indigo-100 dark:border-slate-600">
-                            <span class="text-xl">🤖</span>
-                            <h4 class="font-bold text-indigo-900 dark:text-indigo-300 text-sm">Gemini AI Coach's Analysis</h4>
-                        </div>
-                        <div id="aiLoading" class="hidden flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400 py-4">
-                            <div class="loader"></div>
-                            <span>배하늘 님의 신체 데이터와 훈련 목표를 분석 중입니다...</span>
-                        </div>
-                        <div id="aiContent" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed ai-content space-y-2"></div>
-                        <button id="closeAi" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700">
                             <h4 class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3">🎯 WHY (목적)</h4>
-                            <p id="detailWhy" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">...</p>
+                            <p id="detailWhy" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">-</p>
                         </div>
                         <div class="bg-slate-50 dark:bg-slate-700/50 p-5 rounded-xl border border-slate-100 dark:border-slate-700">
                             <h4 class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3">⚙️ HOW (실행)</h4>
-                            <p id="detailHow" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">...</p>
+                            <p id="detailHow" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">-</p>
                         </div>
                         <div class="bg-rose-50 dark:bg-rose-900/20 p-5 rounded-xl border border-rose-100 dark:border-rose-900/50">
                             <h4 class="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-widest mb-3">⚠️ CAUTION (주의)</h4>
-                            <p id="detailCaution" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">...</p>
+                            <p id="detailCaution" class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">-</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
+        <!-- CHART SECTION -->
         <section>
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        🛡️ 통증 신호등 <span class="text-xs font-normal text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">Gemini Protocol</span>
-                    </h2>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-rose-50 dark:bg-rose-900/20 p-4 rounded-lg border-l-4 border-rose-500">
-                        <span class="block font-bold text-rose-700 dark:text-rose-400 mb-1 text-sm">🔴 RED (즉시 중단)</span>
-                        <span class="text-xs text-slate-600 dark:text-slate-400">찌르는 듯한 국소 통증, 아침 첫발 통증. 48시간 휴식 필수.</span>
-                    </div>
-                    <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border-l-4 border-amber-500">
-                        <span class="block font-bold text-amber-700 dark:text-amber-400 mb-1 text-sm">🟡 YELLOW (강도 조절)</span>
-                        <span class="text-xs text-slate-600 dark:text-slate-400">묵직한 뭉침, 뻣뻣함. 거리 단축 및 마사지 강화.</span>
-                    </div>
-                    <div class="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border-l-4 border-emerald-500">
-                        <span class="block font-bold text-emerald-700 dark:text-emerald-400 mb-1 text-sm">🟢 GREEN (정상 진행)</span>
-                        <span class="text-xs text-slate-600 dark:text-slate-400">통증 없음, 개운함. 계획대로 훈련 진행.</span>
+                <div class="mb-4 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">📊 실시간 스케줄 변동 그래프</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">회색 점선(원래 계획) vs 막대(조정된 현재 계획)</p>
                     </div>
                 </div>
-            </div>
-        </section>
-
-        <section>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                    <div class="mb-4">
-                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">📊 15주 훈련 로드맵</h3>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">LSD 거리(막대)와 업힐 강도(선)의 변화 추이</p>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="comboChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                    <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">🗓️ 고정 스케줄 (Routine)</h3>
-                    <ul class="space-y-3 text-sm">
-                        <li class="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-700/50">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-slate-500 dark:text-slate-400 w-8">MON</span>
-                                <span class="font-medium text-slate-800 dark:text-slate-200">리커버리 (Recovery)</span>
-                            </div>
-                        </li>
-                        <li class="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-700 opacity-50">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-slate-400 w-8">TUE</span>
-                                <span class="font-medium text-slate-500">휴식 (Rest)</span>
-                            </div>
-                        </li>
-                        <li class="flex items-center justify-between p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-cyan-600 dark:text-cyan-400 w-8">WED</span>
-                                <span class="font-medium text-cyan-900 dark:text-cyan-200">크루런 (Crew Run)</span>
-                            </div>
-                        </li>
-                        <li class="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-700 opacity-50">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-slate-400 w-8">THU</span>
-                                <span class="font-medium text-slate-500">휴식 (Rest)</span>
-                            </div>
-                        </li>
-                        <li class="flex items-center justify-between p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-indigo-600 dark:text-indigo-400 w-8">FRI</span>
-                                <span class="font-medium text-indigo-900 dark:text-indigo-200">업힐 (Uphill)</span>
-                            </div>
-                        </li>
-                        <li class="flex items-center justify-between p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-emerald-600 dark:text-emerald-400 w-8">SAT</span>
-                                <span class="font-medium text-emerald-900 dark:text-emerald-200">쉐이크아웃 (Easy)</span>
-                            </div>
-                        </li>
-                        <li class="flex items-center justify-between p-3 rounded-lg bg-rose-50 dark:bg-rose-900/20 border-l-4 border-rose-500">
-                            <div class="flex items-center gap-3">
-                                <span class="font-bold text-rose-600 dark:text-rose-400 w-8">SUN</span>
-                                <span class="font-medium text-rose-900 dark:text-rose-200">LSD (Long Run)</span>
-                            </div>
-                        </li>
-                    </ul>
+                <div class="chart-container">
+                    <canvas id="comboChart"></canvas>
                 </div>
             </div>
         </section>
 
     </main>
 
-    <footer class="bg-slate-900 text-slate-400 py-10 mt-12 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="font-mono text-sm tracking-wider">ENGINEERED BY GPT & GEMINI</p>
-            <p class="text-xs mt-2 text-slate-600">Ultimate Edition for Bae Haneul</p>
+    <!-- DAILY FEEDBACK MODAL -->
+    <div id="dailyModal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-slate-200 dark:border-slate-700 animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    ✅ 훈련 완료 확인
+                </h3>
+                <span id="modalDate" class="text-xs font-mono text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">-</span>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold mb-3 text-slate-700 dark:text-slate-200">
+                        오늘 운동, 얼마나 힘들었나요?
+                    </label>
+                    <div class="relative pt-6 pb-2">
+                        <input type="range" id="dailyRpeSlider" min="1" max="10" value="5" class="w-full">
+                        <div class="flex justify-between mt-3 px-1">
+                            <div class="text-center">
+                                <span class="block text-xs text-slate-400">Easy</span>
+                                <span class="block text-lg font-bold text-emerald-500">1</span>
+                            </div>
+                            <div class="text-center transform -translate-y-6">
+                                <span id="dailyRpeValue" class="block text-3xl font-black text-indigo-600">5</span>
+                                <span id="dailyRpeText" class="block text-xs font-bold text-indigo-500">적당함</span>
+                            </div>
+                            <div class="text-center">
+                                <span class="block text-xs text-slate-400">Max</span>
+                                <span class="block text-lg font-bold text-rose-500">10</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                    <p class="text-xs text-indigo-800 dark:text-indigo-300 leading-snug">
+                        💡 <strong>적응형 로직:</strong><br>
+                        '오늘'의 기록만이 미래를 바꿉니다. 지나간 날짜의 기록은 그래프에 영향을 주지 않습니다.
+                    </p>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeDailyModal()" class="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 transition">취소</button>
+                    <button onclick="saveDailyFeedback()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 shadow-lg transition transform active:scale-95">저장 및 스케줄 조정</button>
+                </div>
+            </div>
         </div>
-    </footer>
+    </div>
 
+    <!-- MISSED WORKOUTS MODAL -->
+    <div id="missedModal" class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-200 dark:border-slate-700 h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">↺ 훈련 변경하기</h3>
+                <button onclick="closeMissedModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                선택한 날짜(<span id="missedTargetDate" class="font-mono text-indigo-500 font-bold"></span>)를<br>
+                아래 훈련 중 하나로 변경합니다.
+            </p>
+            <div id="missedList" class="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                <!-- Items populated via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST MSG -->
+    <div id="toast">메시지</div>
+
+    <!-- SCRIPT -->
     <script>
         // --- CONSTANTS ---
-        // API KEY 제거: 보안상 GitHub Pages에서는 실제 키를 쓰지 않고, 
-        // 대신 아래 로직에서 '안전한 시뮬레이션 응답'을 제공합니다.
-        const STORAGE_KEY = "running_app_data_v1";
-        const START_DATE = "2025-11-17";
-        const RACE_DATE = "2026-03-01"; // 삼일절 하프마라톤
-
-        // --- THEME LOGIC ---
-        const themeToggle = document.getElementById('themeToggle');
-        const htmlEl = document.documentElement;
+        const STORAGE_KEY = "adaptive_plan_v5_4_data";
+        const START_DATE = "2025-11-17"; 
         
-        // Init Theme
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            htmlEl.classList.add('dark');
-            themeToggle.textContent = '☀️';
-        } else {
-            htmlEl.classList.remove('dark');
-            themeToggle.textContent = '🌙';
-        }
-
-        themeToggle.addEventListener('click', () => {
-            htmlEl.classList.toggle('dark');
-            if (htmlEl.classList.contains('dark')) {
-                localStorage.setItem('theme', 'dark');
-                themeToggle.textContent = '☀️';
-            } else {
-                localStorage.setItem('theme', 'light');
-                themeToggle.textContent = '🌙';
-            }
-            // Re-render chart for dark mode colors
-            if(window.myChart) window.myChart.update();
-        });
-
-        // --- STORAGE LOGIC ---
-        function getStorageData() {
-            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-        }
-        function saveCompletion(dateStr, isCompleted) {
-            const data = getStorageData();
-            if (!data[dateStr]) data[dateStr] = {};
-            data[dateStr].completed = isCompleted;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        }
-
-        // --- WORKOUT LIBRARY (Content) ---
-        const workoutLibrary = {
-            "리커버리": { why: "일요일 LSD의 피로(젖산) 제거 및 근육 이완. 완전 휴식보다 회복 속도 빠름.", how: "대화가 가능한 아주 느린 속도(Zone 1-2). 폼 유지에만 집중.", caution: "속도 욕심 금지. 운동이 안 되는 느낌이 들어야 정상." },
-            "휴식": { why: "근육/신경계 성장 및 에너지 충전. 다음 날 고강도 훈련 준비.", how: "완전 휴식 또는 가벼운 스트레칭. 수면 시간 확보.", caution: "하체 근력 운동 자제. 완전한 비움 필요." },
-            "크루런": { why: "러닝의 즐거움 유지 및 사회적 소속감. 멘탈 리프레시.", how: "동료들과 대화하며 즐겁게 러닝. 편안한 그룹 페이스 유지.", caution: "분위기에 휩쓸려 오버페이스 금지. 템포런 아님." },
-            "쉐이크아웃": { why: "금요일 업힐 독소 제거 및 일요일 LSD 예열. 전략적 휴식.", how: "3~5km 아주 가볍게 조깅. '더 뛰고 싶다' 싶을 때 멈춤.", caution: "몸이 무거우면 과감히 완전 휴식 전환 가능." },
-            "업힐": { why: "심폐지구력(VO2max) 및 하체 근력 동시 강화. 관절 충격 최소화.", how: "오르막: 좁은 보폭, 엉덩이 사용. 내리막: 반드시 걷기.", caution: "내리막 뛰기 절대 금지 (무릎/아킬레스건 충격 위험)." },
-            "LSD": { why: "지방 대사 능력 및 장거리 주행 효율성(Economy) 강화.", how: "일정한 저강도 페이스 유지. 거리/시간 채우기가 목표.", caution: "중간 급수 필수. 초반 오버페이스 시 후반에 퍼짐." }
-        };
-
-        // --- DATA ---
-        const trainingData = [
-            { week: 1, date: "2025-11-17", phase: "적응기 (Base)", note: "거리 적응 시작", lsdDist: 14.00, lsdPace: "6:30", tempoDist: 4.00, tempoPace: "5:30", uphillSets: 8, uphillPace: "4:40" },
-            { week: 2, date: "2025-11-24", phase: "적응기 (Base)", note: "LSD 거리 증가", lsdDist: 15.40, lsdPace: "6:30", tempoDist: 4.28, tempoPace: "5:25", uphillSets: 9, uphillPace: "4:38" },
-            { week: 3, date: "2025-12-01", phase: "적응기 (Base)", note: "기초 체력 확보", lsdDist: 16.94, lsdPace: "6:30", tempoDist: 4.58, tempoPace: "5:20", uphillSets: 10, uphillPace: "4:36" },
-            { week: 4, date: "2025-12-08", phase: "회복주 (Recovery)", note: "강도 조절", lsdDist: 11.86, lsdPace: "6:30", tempoDist: 3.21, tempoPace: "5:30", uphillSets: 7, uphillPace: "4:34" },
-            { week: 5, date: "2025-12-15", phase: "강화기 (Build)", note: "다시 거리 증가", lsdDist: 16.94, lsdPace: "6:30", tempoDist: 4.58, tempoPace: "5:20", uphillSets: 10, uphillPace: "4:36" },
-            { week: 6, date: "2025-12-22", phase: "강화기 (Build)", note: "업힐 세트 증가", lsdDist: 18.63, lsdPace: "6:30", tempoDist: 4.90, tempoPace: "5:15", uphillSets: 11, uphillPace: "4:34" },
-            { week: 7, date: "2025-12-29", phase: "강화기 (Build)", note: "20k 돌파", lsdDist: 20.50, lsdPace: "6:30", tempoDist: 5.24, tempoPace: "5:10", uphillSets: 12, uphillPace: "4:32" },
-            { week: 8, date: "2026-01-05", phase: "회복주 (Recovery)", note: "중간 휴식", lsdDist: 14.35, lsdPace: "6:30", tempoDist: 4.19, tempoPace: "5:20", uphillSets: 7, uphillPace: "4:30" },
-            { week: 9, date: "2026-01-12", phase: "강화기 (Peak Prep)", note: "고강도 지속", lsdDist: 20.50, lsdPace: "6:30", tempoDist: 5.24, tempoPace: "5:10", uphillSets: 12, uphillPace: "4:32" },
-            { week: 10, date: "2026-01-19", phase: "강화기 (Peak)", note: "최대 부하 진입", lsdDist: 22.55, lsdPace: "6:30", tempoDist: 5.61, tempoPace: "5:05", uphillSets: 13, uphillPace: "4:30" },
-            { week: 11, date: "2026-01-26", phase: "강화기 (Max Peak)", note: "최장 거리 LSD", lsdDist: 24.80, lsdPace: "6:30", tempoDist: 6.00, tempoPace: "5:00", uphillSets: 14, uphillPace: "4:28" },
-            { week: 12, date: "2026-02-02", phase: "조절기 (Taper)", note: "훈련량 감소 시작", lsdDist: 17.36, lsdPace: "6:30", tempoDist: 4.80, tempoPace: "5:10", uphillSets: 9, uphillPace: "4:26" },
-            { week: 13, date: "2026-02-09", phase: "실전기 (Race Prep)", note: "페이스 감각 유지", lsdDist: 19.84, lsdPace: "6:30", tempoDist: 4.80, tempoPace: "5:00", uphillSets: 11, uphillPace: "4:28" },
-            { week: 14, date: "2026-02-16", phase: "조절기 (Taper)", note: "급격한 양 감소", lsdDist: 14.88, lsdPace: "6:30", tempoDist: 3.60, tempoPace: "5:10", uphillSets: 9, uphillPace: "4:26" },
-            { week: 15, date: "2026-02-23", phase: "대회주 (Race Week)", note: "컨디션 최적화", lsdDist: 7.44, lsdPace: "6:30", tempoDist: 1.80, tempoPace: "5:00", uphillSets: 4, uphillPace: "4:28" }
+        // --- MASTER PLAN ---
+        const MASTER_PLAN = [
+            { week: 1, phase: "적응기", note: "적응 시작", lsdDist: 14.00, uphillSets: 8 },
+            { week: 2, phase: "적응기", note: "거리 증가", lsdDist: 15.40, uphillSets: 9 },
+            { week: 3, phase: "적응기", note: "기초 체력", lsdDist: 16.94, uphillSets: 10 },
+            { week: 4, phase: "회복주", note: "강도 조절", lsdDist: 11.86, uphillSets: 7 },
+            { week: 5, phase: "강화기", note: "빌드업 1", lsdDist: 16.94, uphillSets: 10 },
+            { week: 6, phase: "강화기", note: "빌드업 2", lsdDist: 18.63, uphillSets: 11 },
+            { week: 7, phase: "강화기", note: "20K 돌파", lsdDist: 20.50, uphillSets: 12 },
+            { week: 8, phase: "회복주", note: "중간 휴식", lsdDist: 14.35, uphillSets: 7 },
+            { week: 9, phase: "강화기", note: "고강도", lsdDist: 20.50, uphillSets: 12 },
+            { week: 10, phase: "강화기", note: "피크 준비", lsdDist: 22.55, uphillSets: 13 },
+            { week: 11, phase: "강화기", note: "MAX PEAK", lsdDist: 24.80, uphillSets: 14 },
+            { week: 12, phase: "조절기", note: "테이퍼링", lsdDist: 17.36, uphillSets: 9 },
+            { week: 13, phase: "실전기", note: "페이스", lsdDist: 19.84, uphillSets: 11 },
+            { week: 14, phase: "조절기", note: "휴식 확보", lsdDist: 14.88, uphillSets: 9 },
+            { week: 15, phase: "대회주", note: "D-DAY", lsdDist: 7.44, uphillSets: 4 }
         ];
 
-        // --- HELPER: D-DAY & DATES ---
-        function updateDDay() {
-            const today = new Date();
-            const raceDay = new Date(RACE_DATE);
-            const diff = raceDay - today;
-            const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-            
-            const el = document.getElementById('dDayCounter');
-            if(days > 0) el.textContent = `D-${days} to RACE`;
-            else if(days === 0) el.textContent = `D-DAY! GO!`;
-            else el.textContent = `Race Finished`;
+        const SCHEDULE_TEMPLATE = [
+            { day: "월", type: "리커버리", icon: "🛌", work: "회복 조깅 5km", detail: "Zone 1-2" },
+            { day: "화", type: "휴식", icon: "🧘", work: "완전 휴식", detail: "스트레칭" },
+            { day: "수", type: "크루런", icon: "🏃‍♂️", work: "크루 러닝 6km", detail: "Fun Run" },
+            { day: "목", type: "휴식", icon: "🧘", work: "완전 휴식", detail: "수면 보충" },
+            { day: "금", type: "업힐", icon: "⛰️", work: "업힐 SETS", detail: "내리막 걷기" },
+            { day: "토", type: "쉐이크아웃", icon: "🍃", work: "조깅 4km", detail: "질주 2회" },
+            { day: "일", type: "LSD", icon: "🛣️", work: "장거리주 DIST", detail: "일정 페이스" }
+        ];
+
+        // --- STATE ---
+        let completionData = {}; 
+        let calculatedPlan = [];
+        let swappedWorkouts = {}; 
+        let selectedDate = new Date().toISOString().split('T')[0]; // Default to today
+
+        // --- HELPERS ---
+        function getTodayIso() {
+            return new Date().toISOString().split('T')[0];
         }
-        updateDDay();
 
         function getWeekDates(startDateStr) {
             const startDate = new Date(startDateStr);
@@ -350,354 +314,465 @@
             for (let i = 0; i < 7; i++) {
                 const d = new Date(startDate);
                 d.setDate(startDate.getDate() + i);
-                const m = d.getMonth() + 1;
-                const day = d.getDate();
-                // ISO string for storage key (YYYY-MM-DD)
                 const iso = d.toISOString().split('T')[0];
-                dates.push({ display: `${m}.${day}`, iso: iso, obj: d });
+                dates.push({ display: `${d.getMonth()+1}.${d.getDate()}`, iso: iso, obj: d });
             }
             return dates;
         }
 
-        // --- RENDER LOGIC ---
-        const weekSelector = document.getElementById('weekSelector');
-        const phaseBanner = document.getElementById('phaseBanner');
-        const dailyGrid = document.getElementById('dailyGrid');
-        const detailPanel = document.getElementById('workoutDetailPanel');
-        
-        let currentAiContext = {};
+        function getWeekStartDate(weekNum) {
+            const start = new Date(START_DATE);
+            start.setDate(start.getDate() + (weekNum - 1) * 7);
+            return start.toISOString().split('T')[0];
+        }
 
-        // Populate Dropdown
-        trainingData.forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.week;
-            opt.text = `Week ${d.week} (${d.date})`;
-            weekSelector.appendChild(opt);
-        });
+        function getWeekNumFromDate(isoDate) {
+            const start = new Date(START_DATE);
+            const current = new Date(isoDate);
+            const diffDays = Math.floor((current - start) / (86400000));
+            return Math.floor(diffDays / 7) + 1;
+        }
+
+        // --- CORE ALGORITHM ---
+        function recalculatePlan() {
+            let tempPlan = JSON.parse(JSON.stringify(MASTER_PLAN));
+            const dates = Object.keys(completionData).sort();
+            const todayIso = getTodayIso();
+
+            dates.forEach(date => {
+                const record = completionData[date];
+                if (!record.completed) return;
+                
+                if (date < todayIso) return; 
+
+                const weekNum = getWeekNumFromDate(date);
+                const rpe = record.rpe;
+                
+                let multiplier = 1.0;
+                
+                if (rpe >= 9) multiplier = 0.90; 
+                else if (rpe >= 8) multiplier = 0.95; 
+                else if (rpe <= 2) multiplier = 1.02; 
+                
+                if (multiplier !== 1.0) {
+                    for (let w = weekNum; w < 15; w++) {
+                        if (tempPlan[w]) {
+                            tempPlan[w].lsdDist = parseFloat((tempPlan[w].lsdDist * multiplier).toFixed(2));
+                            tempPlan[w].uphillSets = Math.max(1, Math.round(tempPlan[w].uphillSets * multiplier));
+                        }
+                    }
+                }
+            });
+
+            return tempPlan;
+        }
+
+        // --- LOAD & SAVE ---
+        function loadData() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                completionData = parsed.completionData || {};
+                swappedWorkouts = parsed.swappedWorkouts || {};
+            }
+            calculatedPlan = recalculatePlan(); 
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ completionData, swappedWorkouts }));
+            calculatedPlan = recalculatePlan(); 
+            updateChart();
+            renderWeek(document.getElementById('weekSelector').value);
+        }
+
+        function resetPlan() {
+            if(confirm("초기화하시겠습니까?")) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        }
+
+        // --- RENDER WEEK ---
+        function initDropdown() {
+            const selector = document.getElementById('weekSelector');
+            selector.innerHTML = "";
+            MASTER_PLAN.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.week;
+                opt.text = `Week ${d.week} (${d.phase})`;
+                selector.appendChild(opt);
+            });
+        }
+
+        function selectCard(iso, item) {
+            selectedDate = iso;
+            updateDetail(item);
+            renderWeek(document.getElementById('weekSelector').value); // Re-render to update highlight
+        }
 
         function renderWeek(weekNum) {
-            const data = trainingData.find(d => d.week == weekNum);
-            const dates = getWeekDates(data.date);
-            const todayIso = new Date().toISOString().split('T')[0];
-            const savedData = getStorageData();
+            const plan = calculatedPlan.find(d => d.week == weekNum);
+            const master = MASTER_PLAN.find(d => d.week == weekNum);
+            const startDate = getWeekStartDate(weekNum);
+            const dates = getWeekDates(startDate);
+            const todayIso = getTodayIso();
 
-            // Phase Banner Style
-            phaseBanner.textContent = `Week ${data.week} [${data.phase}] - ${data.note}`;
-            let bannerClass = "w-full px-4 py-3 rounded-lg mb-6 text-center font-bold text-sm shadow-sm border ";
-            if (data.phase.includes('회복') || data.phase.includes('조절')) bannerClass += "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600";
-            else if (data.week === 15) bannerClass += "bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-800";
-            else bannerClass += "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 border-indigo-200 dark:border-indigo-800";
-            phaseBanner.className = bannerClass;
+            // Banner
+            const diff = plan.lsdDist - master.lsdDist;
+            let bannerHtml = `Week ${plan.week} [${plan.phase}]`;
+            if (Math.abs(diff) > 0.1) {
+                const color = diff < 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400";
+                const icon = diff < 0 ? "📉 하향" : "📈 상향";
+                bannerHtml += ` <span class="ml-2 text-xs font-bold ${color}">(${icon} ${diff > 0 ? '+' : ''}${diff.toFixed(1)}km)</span>`;
+            } else {
+                bannerHtml += ` <span class="ml-2 text-xs text-slate-400">(Standard)</span>`;
+            }
+            document.getElementById('phaseBanner').innerHTML = bannerHtml;
 
-            dailyGrid.innerHTML = '';
+            // Grid
+            const grid = document.getElementById('dailyGrid');
+            grid.innerHTML = '';
 
-            // Schedule Data
-            const schedule = [
-                { day: "월", type: "리커버리", icon: "🛌", work: `회복 조깅 5km`, detail: `Pace 7:00`, safety: "피로 회복" },
-                { day: "화", type: "휴식", icon: "🧘", work: "완전 휴식", detail: "스트레칭", safety: "재충전" },
-                { day: "수", type: "크루런", icon: "🏃‍♂️", work: "크루 러닝", detail: "즐거운 페이스", safety: "오버페이스 X" },
-                { day: "목", type: "휴식", icon: "🧘", work: "완전 휴식", detail: "수면 확보", safety: "업힐 대비" },
-                { day: "금", type: "업힐", icon: "⛰️", work: `업힐 ${data.uphillSets}세트`, detail: `Pace ${data.uphillPace}`, safety: "내리막 걷기" },
-                { day: "토", type: "쉐이크아웃", icon: "🍃", work: "가벼운 조깅 3~5km", detail: "편안하게", safety: "LSD 예열" },
-                { day: "일", type: "LSD", icon: "🛣️", work: `장거리주 ${data.lsdDist}km`, detail: `Pace ${data.lsdPace}`, safety: "중간 급수" }
-            ];
+            let scheduleTemplate = SCHEDULE_TEMPLATE.map(t => ({...t})); 
+            scheduleTemplate[4].work = `업힐 ${plan.uphillSets}세트`;
+            scheduleTemplate[6].work = `장거리주 ${plan.lsdDist.toFixed(1)}km`;
 
-            let defaultCardToClick = null;
-
-            schedule.forEach((item, index) => {
+            scheduleTemplate.forEach((templateItem, index) => {
                 const dateInfo = dates[index];
                 const isToday = (dateInfo.iso === todayIso);
-                const isCompleted = savedData[dateInfo.iso]?.completed || false;
-
-                // Card Container
-                const card = document.createElement('div');
-                let cardClass = "relative rounded-xl p-4 shadow-sm border transition-all duration-200 cursor-pointer group ";
+                const isSelected = (dateInfo.iso === selectedDate);
+                const record = completionData[dateInfo.iso];
+                const isCompleted = record && record.completed;
                 
-                // Styles based on state
-                if (isToday) {
-                    cardClass += "bg-white dark:bg-slate-800 ring-2 ring-indigo-500 border-transparent shadow-md scale-[1.02] z-10 ";
-                } else if (isCompleted) {
-                    cardClass += "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-70 hover:opacity-100 ";
-                } else {
-                    cardClass += "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-md hover:-translate-y-1 ";
+                // Swap Logic
+                let item = { ...templateItem };
+                if (swappedWorkouts[dateInfo.iso]) {
+                    item = JSON.parse(JSON.stringify(swappedWorkouts[dateInfo.iso]));
+                    item.day = templateItem.day;
                 }
-                card.className = cardClass;
 
-                // Content
-                card.innerHTML = `
+                // Handlers
+                const clickHandler = `handleCardClick('${dateInfo.iso}', '${item.type}')`;
+                const swapHandler = `openMissedModal('${dateInfo.iso}')`;
+                const restoreHandler = `restoreWorkout('${dateInfo.iso}')`;
+
+                const div = document.createElement('div');
+                let divClass = "relative rounded-xl p-4 shadow-sm border transition-all duration-200 cursor-pointer group ";
+                
+                // Base Style
+                if (isCompleted) divClass += "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 ";
+                else divClass += "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:-translate-y-1 ";
+
+                // Selection Highlight (The Ring)
+                if (isSelected) {
+                    divClass += "ring-2 ring-indigo-500 scale-[1.02] z-10 ";
+                }
+
+                div.className = divClass;
+                
+                // Content construction
+                let swapBtn = "";
+                let customBadge = "";
+                
+                if (swappedWorkouts[dateInfo.iso]) {
+                    customBadge = `<span class="block text-[10px] text-amber-600 font-bold mb-1">↺ 변경됨</span>`;
+                    if (!isCompleted) {
+                        swapBtn = `<button onclick="event.stopPropagation(); ${restoreHandler}" class="w-12 h-6 flex items-center justify-center bg-amber-100 text-amber-700 rounded text-[10px] font-bold hover:bg-amber-200 transition" title="원래대로 복구">↺ 복구</button>`;
+                    }
+                } else {
+                    if (!isCompleted) {
+                        swapBtn = `<button onclick="event.stopPropagation(); ${swapHandler}" class="w-6 h-6 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded text-slate-500 hover:bg-indigo-100 hover:text-indigo-600 transition" title="훈련 변경">↺</button>`;
+                    }
+                }
+
+                div.innerHTML = `
                     <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <span class="text-xs font-bold ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}">${dateInfo.display} (${item.day})</span>
-                            ${isToday ? '<span class="ml-2 text-[10px] bg-indigo-500 text-white px-1.5 py-0.5 rounded-full animate-pulse">TODAY</span>' : ''}
+                        <div class="flex flex-col">
+                            <div>
+                                <span class="text-xs font-bold ${isSelected ? 'text-indigo-600' : 'text-slate-500'}">${dateInfo.display} (${item.day})</span>
+                                ${isToday ? '<span class="ml-2 text-[10px] bg-slate-800 text-white px-1.5 py-0.5 rounded-full">TODAY</span>' : ''}
+                            </div>
                         </div>
-                        <div class="checkbox-wrapper relative z-20" onclick="event.stopPropagation()">
-                            <label class="cursor-pointer flex items-center">
-                                <input type="checkbox" class="peer sr-only" ${isCompleted ? 'checked' : ''} onchange="toggleComplete('${dateInfo.iso}', this)">
-                                <div class="w-6 h-6 border-2 border-slate-300 dark:border-slate-600 rounded flex items-center justify-center peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-colors">
-                                    <svg class="w-3.5 h-3.5 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                            </label>
+                        
+                        <div class="flex items-center gap-2">
+                            ${swapBtn}
+                            <div class="checkbox-wrapper" onclick="event.stopPropagation(); ${clickHandler}">
+                                <label class="cursor-pointer flex items-center">
+                                    <input type="checkbox" class="peer sr-only" ${isCompleted ? 'checked' : ''}>
+                                    <div class="w-6 h-6 border-2 border-slate-300 dark:border-slate-500 rounded flex items-center justify-center peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-colors">
+                                        <svg class="w-3.5 h-3.5 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
+                    ${customBadge}
                     <div class="flex items-center gap-2 mb-1">
                         <span class="text-lg">${item.icon}</span>
                         <h4 class="font-bold text-slate-800 dark:text-slate-200 text-sm">${item.type}</h4>
                     </div>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 truncate">${item.work}</p>
-                    <div class="pt-2 border-t border-dashed border-slate-100 dark:border-slate-700 mt-auto">
-                        <span class="text-[10px] font-mono bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">${item.detail}</span>
-                    </div>
-                `;
-
-                // Click Logic (Detail)
-                card.onclick = () => {
-                    // Visual Select
-                    document.querySelectorAll('#dailyGrid > div').forEach(c => {
-                        c.classList.remove('ring-2', 'ring-indigo-500');
-                        if (!c.innerHTML.includes('TODAY')) c.classList.remove('scale-[1.02]');
-                    });
-                    card.classList.add('ring-2', 'ring-indigo-500', 'scale-[1.02]');
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">${item.work}</p>
                     
-                    updateDetailPanel(item, data); // function below
-                };
+                    ${isCompleted ? 
+                        `<div class="flex items-center gap-1">
+                            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-200 px-1.5 py-0.5 rounded font-bold">RPE ${record.rpe}</span>
+                         </div>` 
+                        : 
+                        `<span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-mono">${item.detail}</span>`
+                    }
+                `;
+                
+                // CLICK SELECT
+                // Note: We pass properties of 'item' to create a plain object for the handler
+                const itemData = { type: item.type, icon: item.icon, work: item.work, detail: item.detail };
+                div.onclick = () => selectCard(dateInfo.iso, itemData);
+                grid.appendChild(div);
 
-                dailyGrid.appendChild(card);
-
-                // Auto Select Logic
-                if(isToday) defaultCardToClick = card;
-                else if(!defaultCardToClick && index === 0) defaultCardToClick = card;
+                if (isSelected) updateDetail(item);
             });
-
-            // Summary Card (8th Slot)
-            renderSummaryCard(data, dates, todayIso);
-
-            // Trigger Default Click
-            if(defaultCardToClick) defaultCardToClick.click();
         }
 
-        // --- TOGGLE COMPLETE LOGIC ---
-        window.toggleComplete = function(dateIso, checkbox) {
-            saveCompletion(dateIso, checkbox.checked);
-            const currentWeek = weekSelector.value;
-            renderWeek(currentWeek);
-        }
-
-        // --- SUMMARY CARD ---
-        function renderSummaryCard(data, dates, todayIso) {
-            // Est volumes
-            const dists = { "리커버리": 5, "휴식": 0, "크루런": 6, "업힐": 5, "쉐이크아웃": 4, "LSD": data.lsdDist };
-            // Calc Total
-            let weeklyTotal = 5 + 0 + 6 + 0 + 5 + 4 + data.lsdDist; 
+        function updateDetail(item) {
+            const workoutLibrary = {
+                "리커버리": { why: "피로 물질 제거", how: "옆 사람과 대화 가능할 정도로 천천히", caution: "속도 욕심 금지" },
+                "휴식": { why: "근육 성장 및 재충전", how: "완전 휴식", caution: "보강운동도 금지" },
+                "크루런": { why: "러닝 즐거움 유지", how: "동료들과 편안한 페이스", caution: "오버페이스 주의" },
+                "업힐": { why: "심폐지구력/파워 강화", how: "오르막 짧게/내리막 걷기", caution: "내리막 뛰기 금지" },
+                "쉐이크아웃": { why: "컨디션 점검", how: "가볍게 조깅 + 질주", caution: "에너지 비축" },
+                "LSD": { why: "지방 대사 효율 증대", how: "일정 페이스 완주", caution: "초반 오버페이스 주의" }
+            };
+            const lib = workoutLibrary[item.type] || { why: "-", how: "-", caution: "-" };
             
-            // Progress Bar
-            let completedCount = 0;
-            dates.forEach(d => {
-                if(getStorageData()[d.iso]?.completed) completedCount++;
-            });
-            const progress = Math.round((completedCount / 7) * 100);
-
-            const html = `
-                <div class="bg-slate-800 dark:bg-slate-800/50 text-white rounded-xl p-4 shadow-lg flex flex-col justify-between relative overflow-hidden group border border-slate-700">
-                    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500 opacity-10 rounded-full -mr-10 -mt-10 blur-xl"></div>
-                    <div>
-                        <h4 class="font-bold text-sm text-slate-300 uppercase tracking-wide mb-4">Weekly Summary</h4>
-                        <div class="flex justify-between items-end mb-2">
-                            <span class="text-3xl font-black text-indigo-400">${weeklyTotal.toFixed(1)}</span>
-                            <span class="text-sm text-slate-400 mb-1">km Total</span>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="flex justify-between text-xs text-slate-400 mb-1">
-                            <span>Progress</span>
-                            <span>${completedCount}/7 Days</span>
-                        </div>
-                        <div class="w-full bg-slate-700 rounded-full h-1.5">
-                            <div class="bg-indigo-500 h-1.5 rounded-full transition-all duration-1000" style="width: ${progress}%"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            dailyGrid.insertAdjacentHTML('beforeend', html);
-        }
-
-        // --- UPDATE DETAIL PANEL ---
-        function updateDetailPanel(item, weekData) {
-            const lib = workoutLibrary[item.type] || { why: "", how: "", caution: "" };
-            
-            // Update Text
             document.getElementById('detailTitle').textContent = item.type;
             document.getElementById('detailIcon').textContent = item.icon;
             document.getElementById('detailSpecs').textContent = `${item.work} (${item.detail})`;
-            
             document.getElementById('detailWhy').textContent = lib.why;
             document.getElementById('detailHow').textContent = lib.how;
             document.getElementById('detailCaution').textContent = lib.caution;
 
-            // Update Accent Color
             const accent = document.getElementById('detailAccent');
-            if(item.type === 'LSD') accent.className = "absolute top-0 left-0 w-1.5 h-full bg-rose-500 transition-colors";
-            else if(item.type === '업힐') accent.className = "absolute top-0 left-0 w-1.5 h-full bg-indigo-500 transition-colors";
+            if (item.type === 'LSD') accent.className = "absolute top-0 left-0 w-1.5 h-full bg-rose-500 transition-colors";
+            else if (item.type === '업힐') accent.className = "absolute top-0 left-0 w-1.5 h-full bg-indigo-500 transition-colors";
             else accent.className = "absolute top-0 left-0 w-1.5 h-full bg-slate-400 transition-colors";
-
-            // Hide AI previous result
-            document.getElementById('aiCoachArea').classList.add('hidden');
-            
-            // Update AI Context
-            currentAiContext = {
-                type: item.type,
-                week: weekData.week,
-                work: item.work,
-                detail: item.detail,
-                why: lib.why,
-                user: "배하늘 (90kg, 종아리 부상 이력)"
-            };
         }
 
-        // --- AI API CALL (SAFE SIMULATION MODE) ---
-        // GitHub Pages는 정적 사이트이므로 API Key 노출 방지를 위해 
-        // 실제 API 호출 대신, 훈련 타입별 '사전 정의된 전문가 조언'을 출력합니다.
-        
-        const btnAskAI = document.getElementById('btnAskAI');
-        const aiCoachArea = document.getElementById('aiCoachArea');
-        const aiLoading = document.getElementById('aiLoading');
-        const aiContent = document.getElementById('aiContent');
-        const closeAi = document.getElementById('closeAi');
+        // --- MISSED WORKOUT LOGIC ---
+        let targetSwapDate = null; 
 
-        // 엘리트 코치 시뮬레이션 데이터
-        const aiResponses = {
-            "리커버리": "### 🧠 Gemini's Recovery Tip\n**'속도를 늦출 용기'가 필요합니다.**\n\n오늘은 심폐지구력을 기르는 날이 아닙니다. 달리기라기보다 '빠른 산책'의 느낌을 유지하세요. 옆 사람과 노래를 부를 수 있을 정도여야 합니다. 만약 종아리가 묵직하다면 과감히 걷거나 폼롤러 마사지로 대체하세요. 오늘의 휴식이 내일의 기록을 만듭니다.",
-            "휴식": "### 🧠 Gemini's Rest Tip\n**'아무것도 안 하는 것'도 훈련입니다.**\n\n배하늘 님의 체중과 부상 이력을 고려할 때, 휴식일은 근육과 인대가 미세 손상을 복구하는 유일한 시간입니다. 죄책감을 갖지 말고 푹 주무세요. 오늘은 하체 운동도 금지입니다. 오직 스트레칭과 수면만이 허락된 훈련입니다.",
-            "크루런": "### 🧠 Gemini's Crew Run Tip\n**'분위기에 취하지 마세요.'**\n\n사람들과 달리면 나도 모르게 페이스가 빨라집니다(Excitement Pace). 오늘은 시계를 보지 말고 호흡에 집중하세요. 특히 90kg대의 체중은 착지 충격이 큽니다. 즐겁게 뛰되, 마지막 1km에서 '더 뛸 힘이 남아있게' 끝내는 것이 핵심입니다.",
-            "업힐": "### 🧠 Gemini's Uphill Tip\n**'보폭은 짧게, 엉덩이로 미세요.'**\n\n종아리 파열 이력이 있는 배하늘 님에게 업힐은 양날의 검입니다. 절대 발끝(비복근)으로 땅을 차지 말고, 허벅지와 엉덩이 근육을 사용해 꾹꾹 눌러 뛰세요. **내리막에서는 절대 뛰지 마세요.** 무릎 충격이 평지의 3배입니다. 걸어서 내려오는 것이 진짜 고수입니다.",
-            "쉐이크아웃": "### 🧠 Gemini's Shakeout Tip\n**'내일 LSD를 위한 예열 과정입니다.'**\n\n몸을 데운다는 느낌으로 아주 가볍게 3~5km만 뛰세요. 뛰고 나서 '아, 좀 부족한데?'라는 생각이 들면 성공입니다. 오늘은 에너지를 비축하는 날이지 소비하는 날이 아닙니다. 저녁에는 탄수화물을 평소보다 조금 더 드세요 (카보로딩).",
-            "LSD": "### 🧠 Gemini's LSD Tip\n**'초반 5km가 승부처입니다.'**\n\n오늘 목표는 속도가 아니라 '시간을 버티는 것'입니다. 초반 5km를 너무 편하게 뛰어서 속도를 높이고 싶을 때, 그것을 참는 것이 LSD의 핵심입니다. 급수는 목마르기 전에 하세요. 만약 종아리에 찌릿한 신호가 오면 즉시 멈춰야 합니다. 완주보다 중요한 건 내일 아침의 컨디션입니다."
-        };
-
-        btnAskAI.addEventListener('click', () => {
-            // UI Reset
-            aiCoachArea.classList.remove('hidden');
-            aiLoading.classList.remove('hidden');
-            aiLoading.classList.add('flex');
-            aiContent.innerHTML = "";
-
-            // Simulate Network Delay (1.2 seconds) to feel like AI
-            setTimeout(() => {
-                const responseText = aiResponses[currentAiContext.type] || 
-                                   "### 🧠 Gemini's General Tip\n**'꾸준함이 재능을 이깁니다.'**\n\n오늘의 훈련은 단순히 하루의 운동이 아닙니다. 3월 1일 하프마라톤을 위한 벽돌 한 장을 쌓는 과정입니다. 통증이 있다면 멈추고, 없다면 즐기세요. 배하늘 님은 이미 훌륭한 러너입니다.";
-                
-                const converter = new showdown.Converter();
-                aiContent.innerHTML = converter.makeHtml(responseText);
-                
-                aiLoading.classList.add('hidden');
-                aiLoading.classList.remove('flex');
-            }, 1200);
-        });
-
-        closeAi.addEventListener('click', () => aiCoachArea.classList.add('hidden'));
-
-        // --- CALENDAR EXPORT (ICS) ---
-        window.downloadICS = function() {
-            const weekNum = weekSelector.value;
-            const data = trainingData.find(d => d.week == weekNum);
-            const dates = getWeekDates(data.date); // returns [{iso: '2025-11-17'...}, ...]
+        function openMissedModal(targetDate) {
+            targetSwapDate = targetDate;
+            document.getElementById('missedTargetDate').textContent = targetDate;
             
-            // Basic VCALENDAR Structure
-            let icsContent = 
-`BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//BaeHaneul//RunPlan//KO
-CALSCALE:GREGORIAN
-METHOD:PUBLISH
-`;
+            const list = document.getElementById('missedList');
+            list.innerHTML = "";
+            const todayIso = getTodayIso();
+            const start = new Date(START_DATE);
+            const today = new Date();
             
-            const scheduleTypes = ["리커버리", "휴식", "크루런", "휴식", "업힐", "쉐이크아웃", "LSD"];
-            
-            dates.forEach((d, idx) => {
-                const type = scheduleTypes[idx];
-                if(type === "휴식") return; // Skip rest days
+            let missedItems = [];
 
-                const startDate = d.iso.replace(/-/g, ''); // YYYYMMDD
-                // Set default time: Mon-Fri 19:00, Sat/Sun 07:00
-                const isWeekend = (idx >= 5);
-                const startTime = isWeekend ? "070000" : "190000";
-                const endTime = isWeekend ? "090000" : "200000";
+            for (let d = new Date(start); d < today; d.setDate(d.getDate() + 1)) {
+                const iso = d.toISOString().split('T')[0];
+                if (iso === todayIso) continue; 
 
-                icsContent += 
-`BEGIN:VEVENT
-SUMMARY:🏃 [15주 플랜] ${type}
-DTSTART:${startDate}T${startTime}
-DTEND:${startDate}T${endTime}
-DESCRIPTION:Week ${data.week} - ${type}. \\n목표: ${workoutLibrary[type].why}
-STATUS:CONFIRMED
-END:VEVENT
-`;
-            });
+                if (!completionData[iso] || !completionData[iso].completed) {
+                    const weekNum = getWeekNumFromDate(iso);
+                    const plan = calculatedPlan.find(p => p.week == weekNum);
+                    
+                    const dayIdx = (d.getDay() + 6) % 7; 
+                    const template = SCHEDULE_TEMPLATE[dayIdx];
+                    
+                    if (template.type === "휴식") continue;
 
-            icsContent += "END:VCALENDAR";
+                    let workStr = template.work;
+                    if (template.type === "업힐") workStr = `업힐 ${plan.uphillSets}세트`;
+                    if (template.type === "LSD") workStr = `장거리주 ${plan.lsdDist.toFixed(1)}km`;
 
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.setAttribute('download', `Running_Plan_Week${data.week}.ics`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                    let tag = "";
+                    let itemClass = "border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50";
+                    
+                    if (["리커버리", "쉐이크아웃", "크루런"].includes(template.type)) {
+                        tag = `<span class="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">✨ 추천</span>`;
+                        itemClass = "border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-900/10";
+                    } else {
+                        tag = `<span class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">⚠️ 주의</span>`;
+                    }
+
+                    missedItems.push({ iso, weekNum, template, workStr, tag, itemClass });
+                }
+            }
+
+            missedItems.reverse(); 
+
+            if (missedItems.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 text-slate-400">놓친 훈련이 없습니다!</div>`;
+            } else {
+                missedItems.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = `p-3 rounded-lg border cursor-pointer transition flex justify-between items-center ${item.itemClass}`;
+                    div.onclick = () => selectMissedWorkout(item.iso, item.template, item.workStr);
+                    div.innerHTML = `
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs text-slate-500 font-mono">${item.iso}</span>
+                                ${item.tag}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span>${item.template.icon}</span>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-200">${item.template.type}</span>
+                                <span class="text-xs text-slate-500">- ${item.workStr}</span>
+                            </div>
+                        </div>
+                        <span class="text-indigo-600 text-sm font-bold">선택 &rarr;</span>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+
+            document.getElementById('missedModal').classList.remove('hidden');
         }
 
-        // --- INIT ---
-        weekSelector.addEventListener('change', (e) => renderWeek(e.target.value));
-        
-        // Auto select current week
-        const today = new Date();
-        const start = new Date(START_DATE);
-        const diffTime = today - start;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        let currentWeek = 1;
-        if(diffDays >= 0) currentWeek = Math.floor(diffDays / 7) + 1;
-        if(currentWeek > 15) currentWeek = 15;
-        
-        weekSelector.value = currentWeek;
-        renderWeek(currentWeek);
+        function closeMissedModal() {
+            document.getElementById('missedModal').classList.add('hidden');
+        }
 
-        // --- CHART RENDER (Moved to end) ---
-        try {
+        function selectMissedWorkout(originalDate, template, workStr) {
+            // NO CONFIRM DIALOG - Immediate Action
+            const newWorkout = JSON.parse(JSON.stringify(template));
+            newWorkout.work = workStr; 
+            
+            swappedWorkouts[targetSwapDate] = newWorkout;
+            
+            saveData(); 
+            closeMissedModal();
+            showToast("훈련이 변경되었습니다.");
+        }
+
+        function restoreWorkout(targetDate) {
+            // FIXED: Directly delete and save
+            delete swappedWorkouts[targetDate];
+            saveData();
+            showToast("스케줄이 복구되었습니다.");
+        }
+
+        // --- FEEDBACK & OTHER LOGIC ---
+        let currentModalDate = null;
+        let currentModalType = null;
+
+        function handleCardClick(isoDate, type) {
+            const record = completionData[isoDate];
+            if (record && record.completed) {
+                if(confirm("기록을 취소하시겠습니까?")) {
+                    delete completionData[isoDate];
+                    saveData();
+                    showToast("취소되었습니다.");
+                }
+            } else {
+                currentModalDate = isoDate;
+                currentModalType = type;
+                document.getElementById('modalDate').innerText = isoDate;
+                document.getElementById('dailyRpeSlider').value = 5;
+                updateSliderUI(5);
+                document.getElementById('dailyModal').classList.remove('hidden');
+            }
+        }
+
+        function closeDailyModal() {
+            document.getElementById('dailyModal').classList.add('hidden');
+        }
+
+        function saveDailyFeedback() {
+            const rpe = parseInt(document.getElementById('dailyRpeSlider').value);
+            const weekNum = getWeekNumFromDate(currentModalDate);
+            const targetIndex = weekNum; 
+            let oldLsd = calculatedPlan[targetIndex] ? calculatedPlan[targetIndex].lsdDist : 0;
+
+            completionData[currentModalDate] = { completed: true, rpe: rpe, type: currentModalType };
+            saveData();
+
+            let newLsd = calculatedPlan[targetIndex] ? calculatedPlan[targetIndex].lsdDist : 0;
+            
+            let msg = `<span class="toast-title">✅ 저장 완료</span>`;
+            if (currentModalDate < getTodayIso()) {
+                msg += `과거 날짜 기록입니다. 미래 스케줄은 변동되지 않습니다.`;
+            } else {
+                if (oldLsd !== newLsd) {
+                    const diff = newLsd - oldLsd;
+                    const color = diff > 0 ? "toast-highlight" : "toast-warn";
+                    msg += `다음 주 LSD: ${oldLsd} → <span class="${color}">${newLsd}km</span>\n`;
+                } else {
+                    msg += `스케줄 유지됨. (RPE ${rpe})`;
+                }
+            }
+            showToast(msg);
+            closeDailyModal();
+        }
+
+        const slider = document.getElementById('dailyRpeSlider');
+        slider.oninput = function() { updateSliderUI(this.value); }
+        function updateSliderUI(val) {
+            document.getElementById('dailyRpeValue').innerText = val;
+            let text = "보통"; let color = "text-indigo-500";
+            if(val<=2){text="매우 쉬움";color="text-emerald-500";}
+            else if(val<=4){text="쉬움";color="text-emerald-600";}
+            else if(val<=6){text="적당함";color="text-indigo-500";}
+            else if(val<=8){text="힘듦";color="text-amber-500";}
+            else{text="극한";color="text-rose-600";}
+            document.getElementById('dailyRpeText').innerText=text;
+            document.getElementById('dailyRpeText').className=`block text-xs font-bold ${color}`;
+        }
+
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = msg; 
+            toast.className = "show";
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 4000);
+        }
+
+        let myChart;
+        function updateChart() {
             const ctx = document.getElementById('comboChart').getContext('2d');
-            window.myChart = new Chart(ctx, {
+            const labels = calculatedPlan.map(d => `W${d.week}`);
+            const originalData = MASTER_PLAN.map(d => d.lsdDist);
+            const currentData = calculatedPlan.map(d => d.lsdDist);
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: trainingData.map(d => `W${d.week}`),
+                    labels: labels,
                     datasets: [
-                        {
-                            type: 'line',
-                            label: '업힐 세트',
-                            data: trainingData.map(d => d.uphillSets),
-                            borderColor: '#6366f1',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            yAxisID: 'y1'
-                        },
-                        {
-                            type: 'bar',
-                            label: 'LSD 거리',
-                            data: trainingData.map(d => d.lsdDist),
-                            backgroundColor: trainingData.map(d => d.week === 15 ? '#f43f5e' : (d.phase.includes('회복') ? '#94a3b8' : '#818cf8')),
-                            yAxisID: 'y'
-                        }
+                        { type: 'line', label: '원래 계획', data: originalData, borderColor: '#94a3b8', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, order: 1 },
+                        { type: 'bar', label: '현재 계획', data: currentData, backgroundColor: calculatedPlan.map(d => d.week==document.getElementById('weekSelector').value?'#4f46e5':'#818cf8'), order: 2 }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { display: false },
-                        y1: { display: false, position: 'right' }
-                    },
-                    plugins: { legend: { display: true } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { display: false } } }
             });
-        } catch(e) {}
+        }
 
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            initDropdown();
+            
+            const today = new Date();
+            const start = new Date(START_DATE);
+            const diffDays = Math.floor((today - start) / (86400000));
+            let week = Math.floor(diffDays / 7) + 1;
+            if(week < 1) week = 1; if(week > 15) week = 15;
+            
+            const selector = document.getElementById('weekSelector');
+            selector.value = week;
+            selector.addEventListener('change', (e) => renderWeek(e.target.value));
+            
+            const raceDay = new Date("2026-03-01");
+            const dDiff = Math.ceil((raceDay - today) / (86400000));
+            document.getElementById('dDayCounter').textContent = `D-${dDiff}`;
+            document.getElementById('themeToggle').addEventListener('click', () => { document.documentElement.classList.toggle('dark'); });
+
+            renderWeek(week);
+            updateChart();
+        });
     </script>
 </body>
 </html>
-```
